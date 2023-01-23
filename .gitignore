@@ -1,3 +1,5 @@
-inputs/
 outputs/
+inputs/raw
+inputs/genomes_raw
+inputs/genomes_combined
 .snakemake

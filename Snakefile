@@ -1,10 +1,12 @@
-SAMPLES = ['J1']
+import pandas as pd
+
 SUFFIXES = ['genomic.gff', 'genomic.gtf', 'cds_from_genomic.fna', 'genomic.fna']
+SAMPLES = ['J1']
 ORGS = ['t4', 'spo1', 'ecoli', 'bsub']
 
 rule all:
     input:
-        expand("inputs/genomes/all_{suffix}.gz", suffix = SUFFIXES),
+        expand("inputs/genomes_combined/all_{suffix}.gz", suffix = SUFFIXES),
         expand("outputs/salmon_quant/{sample}_quant/quant.sf", sample = SAMPLES),
         expand("outputs/bwa_align/{sample}.flagstat", sample = SAMPLES),
         expand("outputs/bwa_align/{sample}.bam.bai", sample = SAMPLES)
@@ -14,33 +16,21 @@ rule all:
 ## Download reference genomes and "transcriptomes" for mapping and counting
 ###########################################################################
 
-rule download_phage_T4:
-    output: "inputs/genomes/t4_{suffix}.gz"
-    shell:'''
-    curl -JLo {output} https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/836/945/GCF_000836945.1_ViralProj14044/GCF_000836945.1_ViralProj14044_{wildcards.suffix}.gz
-    '''
+rule download_references:
+    input: "inputs/genomes.csv"
+    output: "inputs/genomes_raw/{org}-{suffix}.gz"
+    params: out_prefix = lambda wildcards: "inputs/genomes_raw/" + wildcards.org + "-"
+    run:
+        genomes = pd.read_csv(str(input[0]))
+        row = genomes.loc[genomes['genome'] == wildcards.org]
+        prefix = row['url_prefix'].values[0]
+        url = prefix + wildcards.suffix + ".gz"
+        shell("curl -JLo {params.out_prefix}{wildcards.suffix}.gz {url}")
 
-rule download_phage_spo1:
-    output: "inputs/genomes/spo1_{suffix}.gz"
-    shell:'''
-    curl -JLo {output} https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/881/675/GCF_000881675.1_ViralProj32379/GCF_000881675.1_ViralProj32379_{wildcards.suffix}.gz
-    '''
-
-rule download_ecoli:
-    output: "inputs/genomes/ecoli_{suffix}.gz"
-    shell:'''
-    curl -JLo {output} https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/559/635/GCF_001559635.1_ASM155963v1/GCF_001559635.1_ASM155963v1_{wildcards.suffix}.gz
-    '''
-
-rule download_bsub:
-    output: "inputs/genomes/bsub_{suffix}.gz"
-    shell:'''
-    curl -JLo {output} https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/009/045/GCF_000009045.1_ASM904v1/GCF_000009045.1_ASM904v1_{wildcards.suffix}.gz
-    '''
 
 rule combine_references:
-    input: expand("inputs/genomes/{org}_{{suffix}}.gz", org = ORGS)
-    output: "inputs/genomes/all_{suffix}.gz"
+    input: expand("inputs/genomes_raw/{org}-{{suffix}}.gz", org = ORGS)
+    output: "inputs/genomes_combined/all_{suffix}.gz"
     shell:'''
     cat {input} > {output}
     '''
@@ -50,7 +40,7 @@ rule combine_references:
 ###########################################################################
 
 rule salmon_index:
-    input: "inputs/genomes/all_cds_from_genomic.fna.gz"
+    input: "inputs/genomes_combined/all_cds_from_genomic.fna.gz"
     output: "outputs/salmon_indx/info.json"
     params: indx_dir = "outputs/salmon_indx"
     conda: "envs/salmon.yml"
@@ -77,15 +67,15 @@ rule salmon_quant:
 ###########################################################################
 
 rule gunzip_ref:
-    input: "inputs/genomes/all_genomic.fna.gz"
-    output: "inputs/genomes/all_genomic.fna"
+    input: "inputs/genomes_combined/all_genomic.fna.gz"
+    output: "inputs/genomes_combined/all_genomic.fna"
     shell:'''
     gunzip -c {input} > {output}
     '''
 
 rule bwa_index:
-    input: "inputs/genomes/all_genomic.fna"
-    output: "inputs/genomes/all_genomic.fna.bwt"
+    input: "inputs/genomes_combined/all_genomic.fna"
+    output: "inputs/genomes_combined/all_genomic.fna.bwt"
     conda: "envs/bwa.yml"
     shell:'''
     bwa index {input}
@@ -93,8 +83,8 @@ rule bwa_index:
 
 rule map_nucleotide_reads_against_assembly:
     input: 
-        ref = "inputs/genomes/all_genomic.fna",
-        ref_bwt = "inputs/genomes/all_genomic.fna.bwt",
+        ref = "inputs/genomes_combined/all_genomic.fna",
+        ref_bwt = "inputs/genomes_combined/all_genomic.fna.bwt",
         r1 = "inputs/raw/{sample}_1.fq.gz",
         r2 = "inputs/raw/{sample}_2.fq.gz",
     output: "outputs/bwa_align/{sample}.bam"

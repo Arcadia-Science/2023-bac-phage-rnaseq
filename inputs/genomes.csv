@@ -1,0 +1,5 @@
+﻿genome,url_prefix
+t4,https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/836/945/GCF_000836945.1_ViralProj14044/GCF_000836945.1_ViralProj14044_
+spo1,https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/881/675/GCF_000881675.1_ViralProj32379/GCF_000881675.1_ViralProj32379_
+ecoli,https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/559/635/GCF_001559635.1_ASM155963v1/GCF_001559635.1_ASM155963v1_
+bsub,https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/009/045/GCF_000009045.1_ASM904v1/GCF_000009045.1_ASM904v1_
