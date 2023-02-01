@@ -4,3 +4,5 @@ inputs/genomes_raw
 inputs/genomes_combined
 .snakemake
 .DS_Store
+notebooks/.ipynb_checkpoints/
+.Rhistory
