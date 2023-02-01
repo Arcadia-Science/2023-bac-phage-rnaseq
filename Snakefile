@@ -7,7 +7,6 @@ ORGS = ['t4', 'spo1', 'ecoli', 'bsub']
 rule all:
     input:
         expand("inputs/genomes_combined/all_{suffix}.gz", suffix = SUFFIXES),
-        expand("outputs/salmon_quant/{sample}_quant/quant.sf", sample = SAMPLES),
         expand("outputs/bwa_align/{sample}.flagstat", sample = SAMPLES),
         expand("outputs/bwa_align/{sample}.bam.bai", sample = SAMPLES),
         expand("outputs/bwa_align/{sample}.depth", sample = SAMPLES),
