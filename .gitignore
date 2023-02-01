@@ -3,3 +3,4 @@ inputs/raw
 inputs/genomes_raw
 inputs/genomes_combined
 .snakemake
+.DS_Store
