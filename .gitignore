@@ -6,3 +6,4 @@ inputs/genomes_combined
 .DS_Store
 notebooks/.ipynb_checkpoints/
 .Rhistory
+inputs/SuisseIntl*
