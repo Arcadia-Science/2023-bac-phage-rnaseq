@@ -1,16 +1,17 @@
 import pandas as pd
 
-SUFFIXES = ['genomic.gff', 'genomic.gtf', 'cds_from_genomic.fna', 'genomic.fna']
+SUFFIXES = ['genomic.gff', 'genomic.gtf', 'genomic.fna']
 SAMPLES = ['J1']
 ORGS = ['t4', 'spo1', 'ecoli', 'bsub']
 
 rule all:
     input:
         expand("inputs/genomes_combined/all_{suffix}.gz", suffix = SUFFIXES),
-        expand("outputs/salmon_quant/{sample}_quant/quant.sf", sample = SAMPLES),
         expand("outputs/bwa_align/{sample}.flagstat", sample = SAMPLES),
-        expand("outputs/bwa_align/{sample}.bam.bai", sample = SAMPLES)
-
+        expand("outputs/bwa_align/{sample}.bam.bai", sample = SAMPLES),
+        expand("outputs/bwa_align/{sample}.depth", sample = SAMPLES),
+        expand("outputs/bwa_align/{sample}.idxstats", sample = SAMPLES),
+        expand("outputs/featurecounts/{sample}_featurecounts_counts.txt", sample = SAMPLES)
 
 ###########################################################################
 ## Download reference genomes and "transcriptomes" for mapping and counting
@@ -33,33 +34,6 @@ rule combine_references:
     output: "inputs/genomes_combined/all_{suffix}.gz"
     shell:'''
     cat {input} > {output}
-    '''
-
-###########################################################################
-## Count transcripts
-###########################################################################
-
-rule salmon_index:
-    input: "inputs/genomes_combined/all_cds_from_genomic.fna.gz"
-    output: "outputs/salmon_indx/info.json"
-    params: indx_dir = "outputs/salmon_indx"
-    conda: "envs/salmon.yml"
-    shell:'''
-    salmon index -t {input} -i {params.indx_dir} -k 31
-    '''
-
-rule salmon_quant:
-    input: 
-        r1 = "inputs/raw/{sample}_1.fq.gz",
-        r2 = "inputs/raw/{sample}_2.fq.gz",
-        indx = "outputs/salmon_indx/info.json"
-    output: "outputs/salmon_quant/{sample}_quant/quant.sf"
-    params: 
-        indx_dir = "outputs/salmon_indx",
-        out_dir = lambda wildcards: "outputs/salmon_quant/" + wildcards.sample + "_quant"
-    conda: "envs/salmon.yml"
-    shell:'''
-    salmon quant -i {params.indx_dir} -l A -1 {input.r1} -2 {input.r2} -o {params.out_dir} --validateMappings
     '''
 
 ###########################################################################
@@ -101,10 +75,36 @@ rule samtools_index:
     samtools index {input}
     '''
    
-rule flagstat:
+rule samtools_flagstat:
     input: "outputs/bwa_align/{sample}.bam"
     output: "outputs/bwa_align/{sample}.flagstat"
     conda: "envs/bwa.yml"
     shell:'''
     samtools flagstat {input} > {output}
     '''
+
+rule samtools_depth:
+    input: "outputs/bwa_align/{sample}.bam"
+    output: "outputs/bwa_align/{sample}.depth"
+    conda: "envs/bwa.yml"
+    shell:'''
+    samtools depth {input} > {output}
+    '''
+
+rule samtools_idxstats:
+    input: "outputs/bwa_align/{sample}.bam"
+    output: "outputs/bwa_align/{sample}.idxstats"
+    conda: "envs/bwa.yml"
+    shell:'''
+    samtools idxstats {input} > {output}
+    '''
+
+rule featurecounts:
+    input:
+        bam = "outputs/bwa_align/{sample}.bam",
+        gtf = "inputs/genomes_combined/all_genomic.gtf.gz"
+    output: 
+        counts="outputs/featurecounts/{sample}_featurecounts_counts.txt",
+        stat="outputs/featurecounts/{sample}_featurecounts_stats.txt"
+    conda: "envs/rsubread.yml"
+    script: "scripts/snakemake_featurecounts.R"
