@@ -2,6 +2,7 @@
 
 This repository contains code to analyze an RNA-seq sample that contains *Escherichia coli* strain B (ATCC Strain 11303), *Bacillus subtilis* strain 168 (ATCC Strain 27370) and their respective infecting phages, T4 phage and SPO1 phage.
 It contains notebooks that generate the figures in the pub [DOI 10.57844/arcadia-j03a-mz33](https://research.arcadiascience.com/pub/negative-data-phage-rna-isolation).
+The data analyzed in this repository is available with the accession number ERR11000847 (PRJEB60535).
 
 ## Getting started
 
